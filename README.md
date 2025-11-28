@@ -86,7 +86,7 @@ Example config for `local.py`:
 
 ```python
 CELERYBEAT_SCHEDULE["unistudent_sync_all"] = {
-    "task": "unistudent.tasks.sync_all",
+    "task": "unistudent.tasks.pull_all_titles",
     "schedule": 86400,  # once per day (in seconds)
 }
 ```
