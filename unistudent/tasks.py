@@ -5,7 +5,9 @@ import logging
 
 # Third Party
 from celery import shared_task
-from providers import sync_all_provider
+
+# AA unistudent App
+from unistudent.providers import sync_all_provider
 
 logger = logging.getLogger(__name__)
 
