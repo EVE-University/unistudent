@@ -8,7 +8,7 @@
 
 This allows your EVE corp to control access inside AllianceAuth based on in-game roles.
 
----
+______________________________________________________________________
 
 ## ⚙ Initial Setup
 
@@ -29,7 +29,7 @@ You will be asked to grant ESI permissions:
 
 You can return to this page at any time to check token status and refresh it.
 
----
+______________________________________________________________________
 
 ### 2️⃣ Confirm that EVE titles have synced
 
@@ -43,10 +43,10 @@ Check in Admin:
 
 If no titles are listed yet:
 
-* wait for the next scheduled sync, or
-* manually trigger the cron task early (instructions below)
+- wait for the next scheduled sync, or
+- manually trigger the cron task early (instructions below)
 
----
+______________________________________________________________________
 
 ### 3️⃣ Link an EVE title to an AllianceAuth Group
 
@@ -56,13 +56,13 @@ In the Admin:
 /admin/unistudent/selectedtitle/
 ```
 
-* Select your corporation
-* Choose which title should represent “Student”
-* Choose the AA Group to grant (e.g. *Students*)
+- Select your corporation
+- Choose which title should represent “Student”
+- Choose the AA Group to grant (e.g. *Students*)
 
 > Only **one** title may be selected per corporation (expandable in the future)
 
----
+______________________________________________________________________
 
 ### 4️⃣ Allow or trigger synchronization
 
@@ -73,10 +73,10 @@ Once the selected title is set, the next sync will:
 
 You may:
 
-* wait for the next scheduled sync, or
-* manually trigger it
+- wait for the next scheduled sync, or
+- manually trigger it
 
----
+______________________________________________________________________
 
 ## 🔄 Scheduling the Sync Task
 
@@ -85,9 +85,9 @@ This app uses a Celery beat task to keep AA groups updated automatically.
 Example config for `local.py`:
 
 ```python
-CELERYBEAT_SCHEDULE['unistudent_sync_all'] = {
-    'task': 'unistudent.tasks.sync_all',
-    'schedule': 86400,  # once per day (in seconds)
+CELERYBEAT_SCHEDULE["unistudent_sync_all"] = {
+    "task": "unistudent.tasks.sync_all",
+    "schedule": 86400,  # once per day (in seconds)
 }
 ```
 
@@ -99,21 +99,21 @@ You may adjust the interval based on fleet size or operational needs:
 | Every 30 min             | `1800` |
 | Every 5 min *(dev only)* | `300`  |
 
----
+______________________________________________________________________
 
 ## ⚡ What UniStudent Currently Does
 
 | Feature                               | Status |
 | ------------------------------------- | :----: |
-| Token validity tracking               |    ✔   |
-| Pull corp titles                      |    ✔   |
-| Store & clean title names             |    ✔   |
-| Select one AA group per corp title    |    ✔   |
-| Pull member → title mapping           |    ✔   |
-| Bulk update AA group membership       |    ✔   |
-| Automatic recover from expired tokens |    ✔   |
+| Token validity tracking               |   ✔    |
+| Pull corp titles                      |   ✔    |
+| Store & clean title names             |   ✔    |
+| Select one AA group per corp title    |   ✔    |
+| Pull member → title mapping           |   ✔    |
+| Bulk update AA group membership       |   ✔    |
+| Automatic recover from expired tokens |   ✔    |
 
----
+______________________________________________________________________
 
 ## 🛠 Planned Enhancements
 
@@ -125,7 +125,7 @@ You may adjust the interval based on fleet size or operational needs:
 | Auto-sync on demand via UI                | planned   |
 | Role-based auto-kick from Mumble/Discord  | planned   |
 
----
+______________________________________________________________________
 
 ## 📌 Notes
 

@@ -1,22 +1,25 @@
 """Admin models"""
 
 # Django
-from django.contrib import admin  # noqa: F401
-from unistudent.models import Owner, Title, SelectedTitle
+from django.contrib import admin
+
+# AA unistudent App
+from unistudent.models import Owner, SelectedTitle, Title
+
 
 # Register your models here.
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):
-    list_display = ('user', 'user_username')
+    list_display = ("user", "user_username")
 
+    @admin.display(description="Username")
     def user_username(self, obj):
         return obj.user.profile.main_character
-    
-    user_username.short_description = "Username"
-        
+
+
 @admin.register(Title)
 class TitlesAdmin(admin.ModelAdmin):
-    list_display = ('corp', 'title_name', 'title_id')
+    list_display = ("corp", "title_name", "title_id")
 
 
 @admin.register(SelectedTitle)

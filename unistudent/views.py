@@ -5,9 +5,14 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse
 from django.shortcuts import render
-from esi.decorators import tokens_required
-from unistudent.models import Owner
 from django.utils import timezone
+
+# Alliance Auth
+from esi.decorators import tokens_required
+
+# AA unistudent App
+from unistudent.models import Owner
+
 
 @login_required
 @permission_required("unistudent.basic_access")
@@ -23,11 +28,13 @@ def index(request: WSGIRequest, tokens) -> HttpResponse:
 
     for owner in owners:
         age = now - owner.created_at
-        data.append({
-            "username": owner.user.profile.main_character,
-            "age_days": age.days,
-            "last_pull": owner.last_pull,
-            "valid_token": owner.valid_token
-        })
+        data.append(
+            {
+                "username": owner.user.profile.main_character,
+                "age_days": age.days,
+                "last_pull": owner.last_pull,
+                "valid_token": owner.valid_token,
+            }
+        )
 
     return render(request, "unistudent/index.html", {"owners": data})

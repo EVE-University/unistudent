@@ -1,33 +1,40 @@
-
-from esi.openapi_clients import ESIClientProvider
-from esi.helpers import get_token
-from esi.models import Token
-from esi.exceptions import HTTPNotModified
-from django.utils import timezone
-from unistudent.models import Title, Owner, SelectedTitle  
-from allianceauth.authentication.models import EveCorporationInfo
-from allianceauth.eveonline.models import EveCharacter
-
-
+# Standard Library
 import re
 
+# Django
+from django.utils import timezone
+
+# Alliance Auth
+from allianceauth.authentication.models import EveCorporationInfo
+from allianceauth.eveonline.models import EveCharacter
 from allianceauth.services.hooks import get_extension_logger
+from esi.exceptions import HTTPNotModified
+from esi.helpers import get_token
+from esi.models import Token
+from esi.openapi_clients import ESIClientProvider
+
+# AA unistudent App
+from unistudent.models import Owner, SelectedTitle, Title
+
 logger = get_extension_logger(__name__)
 
-import random
-
 esi = ESIClientProvider(
-    compatibility_date = "2025-11-28",
-    ua_appname = "EveUniversity_Student_app",
-    ua_version = "0.0.1",
-    operations=["GetCorporationsCorporationIdTitles","GetCorporationsCorporationIdMembersTitles"]
+    compatibility_date="2025-11-28",
+    ua_appname="EveUniversity_Student_app",
+    ua_version="0.0.1",
+    operations=[
+        "GetCorporationsCorporationIdTitles",
+        "GetCorporationsCorporationIdMembersTitles",
+    ],
 )
+
 
 def strip_html(raw: str) -> str:
     if not raw:
         return ""
     cleaned = re.sub(r"<[^>]*>", "", raw)
     return cleaned.strip()
+
 
 def save_titles_to_db(corporation_id: int, titles: list):
     logger.info(f"Saving titles for corporation {corporation_id}. Count: {len(titles)}")
@@ -55,8 +62,10 @@ def save_titles_to_db(corporation_id: int, titles: list):
 
 
 def get_corp_titles(user_id, corp_id):
-    logger.info(f"Fetching corporation titles for corp {corp_id} using user_id {user_id}")
-    req_scopes = ['esi-corporations.read_titles.v1']
+    logger.info(
+        f"Fetching corporation titles for corp {corp_id} using user_id {user_id}"
+    )
+    req_scopes = ["esi-corporations.read_titles.v1"]
 
     try:
         token = get_token(user_id, req_scopes)
@@ -64,14 +73,13 @@ def get_corp_titles(user_id, corp_id):
         logger.warning(f"No valid token found for user {user_id}")
         Owner.objects.filter(user__id=user_id).update(valid_token=False)
         return False
-    
+
     owner, _ = Owner.objects.get_or_create(user=token.user)
 
     op = esi.client.Corporation.GetCorporationsCorporationIdTitles(
         corporation_id=corp_id,
         token=token,
-        if_none_match=f"{random.random()}",
-        )
+    )
     try:
         data = op.result()
         logger.debug(f"Retrieved {len(data)} titles for corp {corp_id}")
@@ -95,39 +103,40 @@ def get_corp_titles(user_id, corp_id):
         owner.valid_token = False
         owner.save()
         return False
-    
+
+
 def get_title_members(user_id, corp_id):
     logger.info(f"Fetching member titles for corp {corp_id}")
 
-    selected = SelectedTitle.objects.filter(
-        corp__corporation_id=corp_id
-    ).first()
+    selected = SelectedTitle.objects.filter(corp__corporation_id=corp_id).first()
 
     if not selected:
-        logger.warning(f"No selected title for corp {corp_id} — skipping title member sync")
+        logger.warning(
+            f"No selected title for corp {corp_id} — skipping title member sync"
+        )
         return False
 
-    req_scopes = ['esi-corporations.read_titles.v1']
+    req_scopes = ["esi-corporations.read_titles.v1"]
 
     try:
         token = get_token(user_id, req_scopes)
     except Token.DoesNotExist:
         logger.warning(f"No valid token found for member sync for user {user_id}")
         Owner.objects.filter(user__id=user_id).update(valid_token=False)
-        return False 
-    
+        return False
+
     owner, _ = Owner.objects.get_or_create(user=token.user)
 
     op = esi.client.Corporation.GetCorporationsCorporationIdMembersTitles(
         corporation_id=corp_id,
         token=token,
-        if_none_match=f"{random.random()}",
-    )   
+    )
 
     try:
         data = op.result()
-        logger.debug(f"Retrieved member-title data for corp {corp_id}. Count: {len(data)}")
-
+        logger.debug(
+            f"Retrieved member-title data for corp {corp_id}. Count: {len(data)}"
+        )
 
         parse_members(corp_id, data)
 
@@ -150,36 +159,35 @@ def get_title_members(user_id, corp_id):
         owner.valid_token = False
         owner.save()
         return False
-    
+
+
 def parse_members(corp_id, data):
     logger.info(f"Parsing member-title mappings for corp {corp_id}")
 
-    selected = SelectedTitle.objects.filter(
-        corp__corporation_id=corp_id
-    ).select_related("title", "aa_group").first()
+    selected = (
+        SelectedTitle.objects.filter(corp__corporation_id=corp_id)
+        .select_related("title", "aa_group")
+        .first()
+    )
 
     if not selected:
         logger.warning(f"No selected title for corp {corp_id} – skipping group update")
         return
 
     target_title_id = selected.title.title_id
-    group = selected.aa_group 
+    group = selected.aa_group
 
     logger.info(f"Selected title {target_title_id} maps to Group '{group.name}'")
 
     esi_char_ids = {
-        member.character_id
-        for member in data
-        if target_title_id in member.titles
+        member.character_id for member in data if target_title_id in member.titles
     }
 
     logger.info(f"{len(esi_char_ids)} characters have selected title")
 
-    characters = (
-        EveCharacter.objects
-        .filter(character_id__in=esi_char_ids)
-        .select_related("character_ownership__user")
-    )
+    characters = EveCharacter.objects.filter(
+        character_id__in=esi_char_ids
+    ).select_related("character_ownership__user")
 
     users_to_add = set()
     for char in characters:
@@ -205,13 +213,10 @@ def parse_members(corp_id, data):
     logger.info("Group sync completed successfully.")
 
 
-
 def sync_all():
-    owners = (
-        Owner.objects
-        .select_related("user__profile__main_character__character_ownership")
-        .all()
-    )
+    owners = Owner.objects.select_related(
+        "user__profile__main_character__character_ownership"
+    ).all()
 
     corp_buckets = {}
 
@@ -233,13 +238,17 @@ def sync_all():
         title_synced = False
         for owner in corp_owners:
             logger.info(f"Attempt get_corp_titles via {owner.user.username}")
-            res = get_corp_titles(owner.user.profile.main_character.character_id, corp_id)
+            res = get_corp_titles(
+                owner.user.profile.main_character.character_id, corp_id
+            )
             if res:
                 logger.info(f"Title sync success via {owner.user.username}")
                 title_synced = True
                 break
             else:
-                logger.info(f"Title sync failed via {owner.user.username} — trying next")
+                logger.info(
+                    f"Title sync failed via {owner.user.username} — trying next"
+                )
 
         if not title_synced:
             logger.warning(f"No valid tokens for corp {corp_id}. Titles NOT synced.")
@@ -253,13 +262,17 @@ def sync_all():
         member_synced = False
         for owner in corp_owners:
             logger.info(f"Attempt get_title_members via {owner.user.username}")
-            res = get_title_members(owner.user.profile.main_character.character_id, corp_id)
+            res = get_title_members(
+                owner.user.profile.main_character.character_id, corp_id
+            )
             if res:
                 logger.info(f"Member sync success via {owner.user.username}")
                 member_synced = True
                 break
             else:
-                logger.info(f"Member sync failed via {owner.user.username} — trying next")
+                logger.info(
+                    f"Member sync failed via {owner.user.username} — trying next"
+                )
 
         if not member_synced:
             logger.warning(f"No valid token for member sync in corp {corp_id}")
