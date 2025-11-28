@@ -213,7 +213,7 @@ def parse_members(corp_id, data):
     logger.info("Group sync completed successfully.")
 
 
-def sync_all():
+def sync_all_provider():
     owners = Owner.objects.select_related(
         "user__profile__main_character__character_ownership"
     ).all()
