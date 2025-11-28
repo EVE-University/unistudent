@@ -1,4 +1,5 @@
 # Standard Library
+import random
 import re
 
 # Django
@@ -79,6 +80,7 @@ def get_corp_titles(user_id, corp_id):
     op = esi.client.Corporation.GetCorporationsCorporationIdTitles(
         corporation_id=corp_id,
         token=token,
+        if_none_match=f"{random.random()}",
     )
     try:
         data = op.result()
@@ -130,6 +132,7 @@ def get_title_members(user_id, corp_id):
     op = esi.client.Corporation.GetCorporationsCorporationIdMembersTitles(
         corporation_id=corp_id,
         token=token,
+        if_none_match=f"{random.random()}",
     )
 
     try:
